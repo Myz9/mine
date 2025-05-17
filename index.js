@@ -1,47 +1,55 @@
-const mineflayer = require('mineflayer');
-
-let bot;
-
-const SERVER_INFO = {
-  host: 'MarahRaya.aternos.me', // حط عنوان السيرفر
-  port: 41184,                    // البورت (غالبًا 25565 أو خذه من Aternos)
-  username: 'SleepBot',
-  version: false
-};
+// mineflayer bot to stay active on server and mimic human-like behavior
+const mineflayer = require('mineflayer')
+const { Vec3 } = require('vec3')
 
 function createBot() {
-  bot = mineflayer.createBot(SERVER_INFO);
+  const bot = mineflayer.createBot({
+    host: 'MarahRaya.aternos.me', // حط عنوان السيرفر
+    port: 41184,                    // البورت (غالبًا 25565 أو خذه من Aternos)
+    username: 'MZ_3MK', // or any valid Minecraft name
+    auth: 'mojang' // or 'microsoft' if using MS account
+  })
 
-  bot.once('spawn', () => {
-    console.log('✅ Bot joined the server.');
-  });
+  bot.on('spawn', () => {
+    console.log('✅ Bot joined the server.')
 
-  bot.on('message', msg => {
-    const text = msg.toString().toLowerCase();
-    console.log('💬 Chat:', text);
+    // Move randomly every 15 seconds
+    setInterval(() => {
+      const xOffset = Math.random() * 10 - 5
+      const zOffset = Math.random() * 10 - 5
+      const target = bot.entity.position.offset(xOffset, 0, zOffset)
+      bot.lookAt(target)
+      bot.setControlState('forward', true)
+      setTimeout(() => bot.setControlState('forward', false), 1000)
+    }, 15000)
 
-    if (text.includes('sleep bot')) {
-      console.log('🛏️ Received "sleep bot" — disconnecting for 15s...');
-      bot.quit();
-      setTimeout(() => {
-        console.log('🔁 Reconnecting...');
-        createBot();
-      }, 15000);
-    }
-  });
+    // Jump every 25 seconds
+    setInterval(() => {
+      bot.setControlState('jump', true)
+      setTimeout(() => bot.setControlState('jump', false), 300)
+    }, 25000)
 
-  bot.on('error', err => {
-    console.log('❌ Bot error:', err.message);
+    // Swing arm every 30 seconds
+    setInterval(() => {
+      bot.swingArm()
+    }, 30000)
 
-    if (err.code === 'ECONNRESET') {
-      console.log('🔁 Reconnecting after ECONNRESET...');
-      setTimeout(() => createBot(), 5000);
-    }
-  });
+    // Say something random every 2 minutes
+    const chatMessages = ['hello!', 'anyone here?', 'nice world!', 'cool base!']
+    setInterval(() => {
+      const msg = chatMessages[Math.floor(Math.random() * chatMessages.length)]
+      bot.chat(msg)
+    }, 120000)
+  })
 
   bot.on('end', () => {
-    console.log('🔌 Bot disconnected.');
-  });
+    console.log('❌ Bot disconnected. Reconnecting in 10s...')
+    setTimeout(createBot, 10000)
+  })
+
+  bot.on('error', err => {
+    console.log('⚠️ Bot error:', err)
+  })
 }
 
-createBot();
+createBot()
